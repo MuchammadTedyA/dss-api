@@ -25,12 +25,13 @@ type Models struct {
 
 type User struct {
 	ID        int       `json:"id"`
-	UserName  string    `json:"user_name"`
+	UserName  string    `json:"username"`
 	Email     string    `json:"email"`
-	FirsName  string    `json:"first_name,omitempty"`
+	FirstName string    `json:"first_name,omitempty"`
 	LastName  string    `json:"last_name,omitempty"`
 	Password  string    `json:"password"`
-	Active    string    `json:"active"`
+	Status    string    `json:"status"`
+	Level     string    `json:"level"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Token     Token     `json:"token"`
@@ -38,7 +39,7 @@ type User struct {
 
 type Token struct {
 	ID        int       `json:"id"`
-	UserName  string    `json:"user_name"`
+	UserName  string    `json:"username"`
 	Email     string    `json:"email"`
 	Token     string    `json:"token"`
 	TokenHash []byte    `json:"-"`
