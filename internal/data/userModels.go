@@ -172,3 +172,36 @@ func (u *User) Insert(user User) (int, error) {
 
 	return newID, nil
 }
+
+func (u *User) Update() error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := `update users set
+		username = $1,
+		email = $2,
+		first_name = $3,
+		last_name = $4,
+		password = $5,
+		status = $6,
+		level = $7,
+		created_at = $8,
+		updated_at = $9,
+	`
+	_, err := db.ExecContext(ctx, stmt,
+		u.UserName,
+		u.Email,
+		u.FirstName,
+		u.LastName,
+		u.Password,
+		u.Level,
+		u.CreatedAt,
+		u.UpdatedAt,
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
