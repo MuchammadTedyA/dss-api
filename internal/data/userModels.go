@@ -205,3 +205,17 @@ func (u *User) Update() error {
 	return nil
 
 }
+
+func (u *User) DeleteByUsername(username string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := `delete from users where username = $1`
+
+	_, err := db.ExecContext(ctx, stmt, username)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
