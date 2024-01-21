@@ -390,3 +390,37 @@ func (t *Token) AuthenticateToken(r *http.Request) (*User, error) {
 }
 
 // END AUTHENTICATE TOKEN
+
+// Insert token
+func (t *Token) Insert(token Token, u User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := `delete from tokens where username = $1`
+	_, err := db.ExecContext(ctx, stmt, token.UserName)
+	if err != nil {
+		return err
+	}
+
+	token.Email = u.Email
+
+	stmt = `insert into tokens(username, email, token, token_hash, created_at, updated_at, expiry)
+		values($1, $2, $3, $4, $5, $6, $7)`
+
+	_, err = db.ExecContext(ctx, stmt,
+		token.UserName,
+		token.Email,
+		token.Token,
+		token.TokenHash,
+		time.Now(),
+		time.Now(),
+		token.Expiry,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
