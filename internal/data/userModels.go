@@ -6,6 +6,8 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"errors"
+	"net/http"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -17,7 +19,7 @@ func (u *User) GetAll() ([]*User, error) {
 	defer cancel()
 
 	query := `
-	select id, username, email, first_name, last_name, password, status, level, created_at, updated_at,
+	select id, username, email, first_name, last_name, password, active, level, created_at, updated_at,
 	case
 		when (select count(id) from tokens t where username = users.username and t.expiry > NOW()) > 0
 		then 1
@@ -42,7 +44,7 @@ func (u *User) GetAll() ([]*User, error) {
 			&user.FirstName,
 			&user.LastName,
 			&user.Password,
-			&user.Status,
+			&user.Active,
 			&user.Level,
 			&user.CreatedAt,
 			&user.UpdatedAt,
@@ -62,7 +64,7 @@ func (u *User) GetOne(username string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
 	defer cancel()
 
-	query := `select id, username, email, first_name, last_name, password, status, level, created_at, updated_at from users where username = $1`
+	query := `select id, username, email, first_name, last_name, password, active, level, created_at, updated_at from users where username = $1`
 
 	var user User
 	row := db.QueryRowContext(ctx, query, username)
@@ -74,7 +76,7 @@ func (u *User) GetOne(username string) (*User, error) {
 		&user.FirstName,
 		&user.LastName,
 		&user.Password,
-		&user.Status,
+		&user.Active,
 		&user.Level,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -90,7 +92,7 @@ func (u *User) GetByEmail(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
 	defer cancel()
 
-	query := `select id, username, email, first_name, last_name, password, status, level, created_at, updated_at from users where email = $1`
+	query := `select id, username, email, first_name, last_name, password, active, level, created_at, updated_at from users where email = $1`
 
 	var user User
 	row := db.QueryRowContext(ctx, query, email)
@@ -102,7 +104,7 @@ func (u *User) GetByEmail(email string) (*User, error) {
 		&user.FirstName,
 		&user.LastName,
 		&user.Password,
-		&user.Status,
+		&user.Active,
 		&user.Level,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -119,7 +121,7 @@ func (u *User) GetByUsername(email string) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
 	defer cancel()
 
-	query := `select id, username, email, first_name, last_name, password, status, level, created_at, updated_at from users where username = $1`
+	query := `select id, username, email, first_name, last_name, password, active, level, created_at, updated_at from users where username = $1`
 
 	var user User
 	row := db.QueryRowContext(ctx, query, email)
@@ -131,7 +133,7 @@ func (u *User) GetByUsername(email string) (*User, error) {
 		&user.FirstName,
 		&user.LastName,
 		&user.Password,
-		&user.Status,
+		&user.Active,
 		&user.Level,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -155,7 +157,7 @@ func (u *User) Insert(user User) (int, error) {
 
 	var newID int
 	stmt := `
-	insert into users(username, email, first_name, last_name, password, status, level, created_at, updated_at)
+	insert into users(username, email, first_name, last_name, password, active, level, created_at, updated_at)
 	values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id
 	`
 
@@ -165,7 +167,7 @@ func (u *User) Insert(user User) (int, error) {
 		user.FirstName,
 		user.LastName,
 		hashedPassword,
-		user.Status,
+		user.Active,
 		user.Level,
 		time.Now(),
 		time.Now(),
@@ -188,7 +190,7 @@ func (u *User) Update() error {
 		first_name = $3,
 		last_name = $4,
 		password = $5,
-		status = $6,
+		active = $6,
 		level = $7,
 		created_at = $8,
 		updated_at = $9,
@@ -199,6 +201,7 @@ func (u *User) Update() error {
 		u.FirstName,
 		u.LastName,
 		u.Password,
+		u.Active,
 		u.Level,
 		u.CreatedAt,
 		u.UpdatedAt,
@@ -296,7 +299,7 @@ func (t *Token) GetUserForToken(token Token) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
 	defer cancel()
 
-	query := `select id, username, email, first_name, last_name, password, status, level, created_at, updated_at from users where username = $1`
+	query := `select id, username, email, first_name, last_name, password, active, level, created_at, updated_at from users where username = $1`
 
 	var user User
 	row := db.QueryRowContext(ctx, query, token.UserName)
@@ -308,7 +311,7 @@ func (t *Token) GetUserForToken(token Token) (*User, error) {
 		&user.FirstName,
 		&user.LastName,
 		&user.Password,
-		&user.Status,
+		&user.Active,
 		&user.Level,
 		&user.CreatedAt,
 		&user.UpdatedAt,
@@ -340,3 +343,50 @@ func (t *Token) GenerateToken(username string, ttl time.Duration) (*Token, error
 }
 
 // END GET TOKEN
+
+// START AUTHENTICATE TOKEN
+func (t *Token) AuthenticateToken(r *http.Request) (*User, error) {
+	// Get authorization header
+	authorizationHeader := r.Header.Get("Authorization")
+	if authorizationHeader == "" {
+		return nil, errors.New("No authorization header received")
+	}
+
+	// Get the plain text token from the header
+	headerParts := strings.Split(authorizationHeader, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" {
+		return nil, errors.New("No valid authorization header received")
+	}
+
+	token := headerParts[1]
+
+	// Check if the token length is correct
+	if len(token) != 26 {
+		return nil, errors.New("Token wrong size")
+	}
+
+	// Get token from db, using plain text token
+	tkn, err := t.GetByToken(token)
+	if err != nil {
+		return nil, errors.New("No matching token found")
+	}
+
+	// Check if token expired
+	if tkn.Expiry.Before(time.Now()) {
+		return nil, errors.New("Token is expired")
+	}
+
+	// Get the user associated with the token
+	user, err := t.GetUserForToken(*tkn)
+	if err != nil {
+		return nil, errors.New("No matching user found")
+	}
+
+	if user.Active == 0 {
+		return nil, errors.New("User not active")
+	}
+
+	return user, nil
+}
+
+// END AUTHENTICATE TOKEN
