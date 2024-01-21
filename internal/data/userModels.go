@@ -424,3 +424,18 @@ func (t *Token) Insert(token Token, u User) error {
 	return nil
 
 }
+
+// Delete a token by plain text
+func (t *Token) DeleteByToken(plainText string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := `delete from tokens where token = $1`
+
+	_, err := db.ExecContext(ctx, stmt, plainText)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
