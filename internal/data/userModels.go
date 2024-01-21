@@ -262,3 +262,31 @@ func (u *User) ResetPassword(password string) error {
 }
 
 // END ABOUT PASSWORD
+
+// START GET TOKEN
+func (t *Token) GetByToken(plainText string) (*Token, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	query := `select id, username, email, token, token_hash, created_at, updated_at, expiry from tokens where token = $1`
+
+	var token Token
+	row := db.QueryRowContext(ctx, query, plainText)
+	err := row.Scan(
+		&token.ID,
+		&token.UserName,
+		&token.Email,
+		&token.Token,
+		&token.TokenHash,
+		&token.CreatedAt,
+		&token.UpdatedAt,
+		&token.Expiry,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &token, nil
+}
+
+// END GET TOKEN
