@@ -425,7 +425,7 @@ func (t *Token) Insert(token Token, u User) error {
 
 }
 
-// Delete a token by plain text
+// Delete a token
 func (t *Token) DeleteByToken(plainText string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
 	defer cancel()
@@ -437,5 +437,17 @@ func (t *Token) DeleteByToken(plainText string) error {
 		return err
 	}
 
+	return nil
+}
+
+func (t *Token) DeleteTokensForUser(username string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	stmt := "delete from tokens where username = $1"
+	_, err := db.ExecContext(ctx, stmt, username)
+	if err != nil {
+		return err
+	}
 	return nil
 }
