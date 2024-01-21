@@ -289,4 +289,32 @@ func (t *Token) GetByToken(plainText string) (*Token, error) {
 	return &token, nil
 }
 
+func (t *Token) GetUserForToken(token Token) (*User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), dbTimeOut)
+	defer cancel()
+
+	query := `select id, username, email, first_name, last_name, password, status, level, created_at, updated_at from users where username = $1`
+
+	var user User
+	row := db.QueryRowContext(ctx, query, token.UserName)
+
+	err := row.Scan(
+		&user.ID,
+		&user.UserName,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.Password,
+		&user.Status,
+		&user.Level,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
+
 // END GET TOKEN
