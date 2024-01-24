@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dss-api/internal/data"
 	"dss-api/internal/driver"
 	"fmt"
 	"log"
@@ -19,7 +20,7 @@ type application struct {
 	infoLog  *log.Logger
 	errorLog *log.Logger
 	// db       *driver.DB
-	// models      data.Models
+	models      data.Models
 	environment string
 }
 
