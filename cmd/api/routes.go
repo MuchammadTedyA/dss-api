@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dss-api/internal/data"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -19,6 +20,37 @@ func (app *application) routes() http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
+
+	// TEST ADD A USER
+	mux.Get("/users/add", func(w http.ResponseWriter, r *http.Request) {
+		var u = data.User{
+			UserName:  "test",
+			Email:     "test@test.com",
+			FirstName: "You",
+			LastName:  "There",
+			Password:  "password",
+			Level:     1,
+		}
+
+		app.infoLog.Println("Adding user..")
+
+		id, err := app.models.User.Insert(u)
+		if err != nil {
+			app.errorLog.Println(err)
+			app.errorJSON(w, err, http.StatusForbidden)
+			return
+		}
+
+		app.infoLog.Println("Got back id of", id)
+		newUser, err := app.models.User.GetOne(id)
+		if err != nil {
+			app.errorLog.Println(err)
+			app.errorJSON(w, err, http.StatusForbidden)
+			return
+		}
+		app.writeJSON(w, http.StatusOK, newUser)
+
+	})
 
 	return mux
 }
