@@ -46,7 +46,7 @@ func main() {
 		infoLog:  infoLog,
 		errorLog: errorLog,
 		// db:       db,
-		// models:      data.New(db.SQL),
+		models:      data.New(db.SQL),
 		environment: environment,
 	}
 
