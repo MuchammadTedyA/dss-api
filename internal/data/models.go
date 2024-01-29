@@ -31,7 +31,7 @@ type User struct {
 	LastName  string    `json:"last_name,omitempty"`
 	Password  string    `json:"password"`
 	Active    int       `json:"active"`
-	Level     string    `json:"level"`
+	Level     int       `json:"level"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	Token     Token     `json:"token"`
