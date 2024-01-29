@@ -39,6 +39,7 @@ type User struct {
 
 type Token struct {
 	ID        int       `json:"id"`
+	UserID    int       `json:"user_id"`
 	UserName  string    `json:"username"`
 	Email     string    `json:"email"`
 	Token     string    `json:"token"`

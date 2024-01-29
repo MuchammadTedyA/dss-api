@@ -8,7 +8,7 @@ import (
 
 func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 	type credentials struct {
-		UserName string `json:"email"`
+		UserName string `json:"username"`
 		Password string `json:"password"`
 	}
 
@@ -47,7 +47,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// we have a valid user, so generate a token
-	token, err := app.models.Token.GenerateToken(user.UserName, 30*time.Minute)
+	token, err := app.models.Token.GenerateToken(user.ID, 30*time.Minute)
 	if err != nil {
 		app.errorJSON(w, err)
 		return
