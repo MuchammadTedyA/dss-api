@@ -28,11 +28,11 @@ func (app *application) routes() http.Handler {
 		r.Use(app.AuthTokenMiddleware)
 
 		// admin user routes
-		mux.Post("/users", app.AllUsers)
-		mux.Post("/users/save", app.EditUser)
-		mux.Post("/users/get/{id}", app.GetUser)
-		mux.Post("/users/delete", app.DeleteUser)
-		mux.Post("/log-user-out/{id}", app.LogUserOutAndSetInactive)
+		r.Post("/users", app.AllUsers)
+		r.Post("/users/save", app.EditUser)
+		r.Post("/users/get/{id}", app.GetUser)
+		r.Post("/users/delete", app.DeleteUser)
+		r.Post("/log-user-out/{id}", app.LogUserOutAndSetInactive)
 
 	})
 
