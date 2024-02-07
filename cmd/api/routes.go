@@ -1,9 +1,7 @@
 package main
 
 import (
-	"dss-api/internal/data"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -22,57 +20,77 @@ func (app *application) routes() http.Handler {
 		MaxAge:           300,
 	}))
 
-	// TEST ADD A USER
-	mux.Get("/users/add", func(w http.ResponseWriter, r *http.Request) {
-		var u = data.User{
-			UserName:  "test",
-			Email:     "test@test.com",
-			FirstName: "You",
-			LastName:  "There",
-			Password:  "password",
-			Level:     1,
-		}
+	mux.Post("/users/login", app.Login)
+	mux.Post("/users/logout", app.Logout)
+	mux.Post("/validate-token", app.ValidateToken)
 
-		app.infoLog.Println("Adding user..")
+	mux.Route("/admin", func(r chi.Router) {
+		r.Use(app.AuthTokenMiddleware)
 
-		id, err := app.models.User.Insert(u)
-		if err != nil {
-			app.errorLog.Println(err)
-			app.errorJSON(w, err, http.StatusForbidden)
-			return
-		}
-
-		app.infoLog.Println("Got back id of", id)
-		newUser, err := app.models.User.GetOne(id)
-		if err != nil {
-			app.errorLog.Println(err)
-			app.errorJSON(w, err, http.StatusForbidden)
-			return
-		}
-		app.writeJSON(w, http.StatusOK, newUser)
+		// admin user routes
+		mux.Post("/users", app.AllUsers)
+		mux.Post("/users/save", app.EditUser)
+		mux.Post("/users/get/{id}", app.GetUser)
+		mux.Post("/users/delete", app.DeleteUser)
+		mux.Post("/log-user-out/{id}", app.LogUserOutAndSetInactive)
 
 	})
+
+	// TEST ADD A USER
+	/*
+		mux.Get("/users/add", func(w http.ResponseWriter, r *http.Request) {
+			var u = data.User{
+				UserName:  "test",
+				Email:     "test@test.com",
+				FirstName: "You",
+				LastName:  "There",
+				Password:  "password",
+				Level:     1,
+			}
+
+			app.infoLog.Println("Adding user..")
+
+			id, err := app.models.User.Insert(u)
+			if err != nil {
+				app.errorLog.Println(err)
+				app.errorJSON(w, err, http.StatusForbidden)
+				return
+			}
+
+			app.infoLog.Println("Got back id of", id)
+			newUser, err := app.models.User.GetOne(id)
+			if err != nil {
+				app.errorLog.Println(err)
+				app.errorJSON(w, err, http.StatusForbidden)
+				return
+			}
+			app.writeJSON(w, http.StatusOK, newUser)
+
+		})
+	*/
 
 	// TEST GENERATE TOKEN
-	mux.Get("/test-generate-token", func(w http.ResponseWriter, r *http.Request) {
-		token, err := app.models.Token.GenerateToken(1, 60*time.Minute)
-		if err != nil {
-			app.errorLog.Println(err)
-			return
-		}
+	/*
+		mux.Get("/test-generate-token", func(w http.ResponseWriter, r *http.Request) {
+			token, err := app.models.Token.GenerateToken(1, 60*time.Minute)
+			if err != nil {
+				app.errorLog.Println(err)
+				return
+			}
 
-		token.UserName = "test"
-		token.CreatedAt = time.Now()
-		token.UpdatedAt = time.Now()
+			token.UserName = "test"
+			token.CreatedAt = time.Now()
+			token.UpdatedAt = time.Now()
 
-		payload := jsonResponse{
-			Error:   false,
-			Message: "success",
-			Data:    token,
-		}
+			payload := jsonResponse{
+				Error:   false,
+				Message: "success",
+				Data:    token,
+			}
 
-		app.writeJSON(w, http.StatusOK, payload)
-	})
+			app.writeJSON(w, http.StatusOK, payload)
+		})
+	*/
 
 	return mux
 }
